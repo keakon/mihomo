@@ -113,6 +113,11 @@ func (u *udpHopPacketConn) hopLoop() {
 		case <-ticker.C:
 			log.Infoln("Hopping")
 			u.hop()
+			select {
+			case <-ticker.C:
+				// drain out the ticker
+			default:
+			}
 		case <-u.closeChan:
 			return
 		}
