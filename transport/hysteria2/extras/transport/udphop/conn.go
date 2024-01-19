@@ -106,14 +106,19 @@ func (u *udpHopPacketConn) recvLoop(conn net.PacketConn) {
 
 func (u *udpHopPacketConn) hopLoop() {
 	log.Infoln("Starting UDP hop loop")
-	timer := time.NewTimer(u.HopInterval)
-	defer timer.Stop()
+	ticker := time.NewTicker(u.HopInterval)
+	defer ticker.Stop()
+	var lastTick time.Time
 	for {
 		select {
-		case <-timer.C:
+		case now := <-ticker.C:
+			if now.Sub(lastTick) < u.HopInterval {
+				log.Infoln("Skipping hop")
+				continue
+			}
 			log.Infoln("Hopping")
 			u.hop()
-			timer.Reset(u.HopInterval)
+			lastTick = now
 		case <-u.closeChan:
 			return
 		}
