@@ -115,8 +115,7 @@ func (u *udpHopPacketConn) hopLoop() {
 	for {
 		select {
 		case now := <-ticker.C:
-			log.Infoln("%s", now)
-			if now.Sub(lastTick) < u.HopInterval {
+			if now.Sub(lastTick) < u.HopInterval-time.Millisecond*10 {
 				log.Infoln("Skipping hop")
 				continue
 			}
@@ -177,7 +176,6 @@ func (u *udpHopPacketConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) 
 			// Currently we do not check whether the packet is from
 			// the server or not due to performance reasons.
 			n := copy(b, p.Buf[:p.N])
-			log.Infoln("read %d bytes", n)
 			u.bufPool.Put(p.Buf)
 			return n, u.Addr, nil
 		case <-u.closeChan:
