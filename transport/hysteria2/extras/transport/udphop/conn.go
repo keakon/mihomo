@@ -59,13 +59,14 @@ func NewUDPHopPacketConn(addr *UDPHopAddr, hopInterval time.Duration) (net.Packe
 	if err != nil {
 		return nil, err
 	}
+	index := rand.Intn(len(addrs))
 	hConn := &udpHopPacketConn{
-		Addr:        addr,
+		Addr:        addrs[index],
 		Addrs:       addrs,
 		HopInterval: hopInterval,
 		prevConn:    nil,
 		currentConn: curConn,
-		addrIndex:   rand.Intn(len(addrs)),
+		addrIndex:   index,
 		recvQueue:   make(chan *udpPacket, packetQueueSize),
 		closeChan:   make(chan struct{}),
 		bufPool: sync.Pool{
@@ -162,7 +163,8 @@ func (u *udpHopPacketConn) hop() {
 	go u.recvLoop(newConn)
 	// Update addrIndex to a new random value
 	u.addrIndex = rand.Intn(len(u.Addrs))
-	log.Infoln("hopped to %s", u.Addrs[u.addrIndex])
+	u.Addr = u.Addrs[u.addrIndex]
+	log.Infoln("hopped to %s", u.Addr)
 }
 
 func (u *udpHopPacketConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) {
@@ -177,6 +179,7 @@ func (u *udpHopPacketConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) 
 			// the server or not due to performance reasons.
 			n := copy(b, p.Buf[:p.N])
 			u.bufPool.Put(p.Buf)
+			log.Infoln("read from %s", u.Addr)
 			return n, u.Addr, nil
 		case <-u.closeChan:
 			log.Infoln("closed")
