@@ -58,16 +58,10 @@ func NewUDPHopPacketConn(addr *UDPHopAddr, hopInterval time.Duration) (net.Packe
 func (u *udpHopPacketConn) hopLoop() {
 	ticker := time.NewTicker(u.HopInterval)
 	defer ticker.Stop()
-	var lastTick time.Time
 	for {
 		select {
-		case now := <-ticker.C:
-			if now.Sub(lastTick) < u.HopInterval-time.Millisecond*10 {
-				log.Infoln("Skipping hop")
-				continue
-			}
+		case <-ticker.C:
 			u.hop()
-			lastTick = now
 		case <-u.closeChan:
 			return
 		}
