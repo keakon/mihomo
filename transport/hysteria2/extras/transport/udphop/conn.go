@@ -88,7 +88,6 @@ func (u *udpHopPacketConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) 
 
 func (u *udpHopPacketConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	if u.closed {
-		log.Infoln("write to closed conn")
 		return 0, net.ErrClosed
 	}
 	return u.conn.WriteTo(b, u.Addrs[u.addrIndex])
