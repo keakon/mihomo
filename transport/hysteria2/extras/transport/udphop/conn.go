@@ -84,6 +84,7 @@ func (u *udpHopPacketConn) recvLoop(conn net.PacketConn) {
 		buf := u.bufPool.Get().([]byte)
 		n, addr, err := conn.ReadFrom(buf)
 		if err != nil {
+			log.Errorln("ReadFrom error: %v", err)
 			u.bufPool.Put(buf)
 			var netErr net.Error
 			if errors.As(err, &netErr) && netErr.Timeout() {
@@ -96,8 +97,10 @@ func (u *udpHopPacketConn) recvLoop(conn net.PacketConn) {
 		}
 		select {
 		case u.recvQueue <- &udpPacket{buf, n, addr, nil}:
+			log.Infoln("queued %d bytes", n)
 			// Packet successfully queued
 		default:
+			log.Infoln("dropped %d bytes", n)
 			// Queue is full, drop the packet
 			u.bufPool.Put(buf)
 		}
