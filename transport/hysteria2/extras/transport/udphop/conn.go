@@ -80,6 +80,7 @@ func NewUDPHopPacketConn(addr *UDPHopAddr, hopInterval time.Duration) (net.Packe
 }
 
 func (u *udpHopPacketConn) recvLoop(conn net.PacketConn) {
+	log.Infoln("Starting UDP receive loop: %v", conn.LocalAddr())
 	for {
 		buf := u.bufPool.Get().([]byte)
 		n, addr, err := conn.ReadFrom(buf)
@@ -97,7 +98,6 @@ func (u *udpHopPacketConn) recvLoop(conn net.PacketConn) {
 		}
 		select {
 		case u.recvQueue <- &udpPacket{buf, n, addr, nil}:
-			log.Infoln("queued %d bytes", n)
 			// Packet successfully queued
 		default:
 			log.Infoln("dropped %d bytes", n)
@@ -171,14 +171,17 @@ func (u *udpHopPacketConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) 
 		select {
 		case p := <-u.recvQueue:
 			if p.Err != nil {
+				log.Errorln("ReadFrom error: %v", p.Err)
 				return 0, nil, p.Err
 			}
 			// Currently we do not check whether the packet is from
 			// the server or not due to performance reasons.
 			n := copy(b, p.Buf[:p.N])
+			log.Infoln("read %d bytes", n)
 			u.bufPool.Put(p.Buf)
 			return n, u.Addr, nil
 		case <-u.closeChan:
+			log.Infoln("closed")
 			return 0, nil, net.ErrClosed
 		}
 	}
@@ -188,6 +191,7 @@ func (u *udpHopPacketConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	u.connMutex.RLock()
 	defer u.connMutex.RUnlock()
 	if u.closed {
+		log.Infoln("write to closed conn")
 		return 0, net.ErrClosed
 	}
 	// Skip the check for now, always write to the server,
