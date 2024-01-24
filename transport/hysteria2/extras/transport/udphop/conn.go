@@ -10,12 +10,7 @@ import (
 	"github.com/metacubex/mihomo/log"
 )
 
-const (
-	packetQueueSize = 1024
-	udpBufferSize   = 2048 // QUIC packets are at most 1500 bytes long, so 2k should be more than enough
-
-	defaultHopInterval = 30 * time.Second
-)
+const defaultHopInterval = 30 * time.Second
 
 type udpHopPacketConn struct {
 	Addrs       []net.Addr
@@ -61,7 +56,6 @@ func NewUDPHopPacketConn(addr *UDPHopAddr, hopInterval time.Duration) (net.Packe
 }
 
 func (u *udpHopPacketConn) hopLoop() {
-	log.Infoln("Starting UDP hop loop: %s", u.HopInterval)
 	ticker := time.NewTicker(u.HopInterval)
 	defer ticker.Stop()
 	var lastTick time.Time
@@ -72,7 +66,6 @@ func (u *udpHopPacketConn) hopLoop() {
 				log.Infoln("Skipping hop")
 				continue
 			}
-			log.Infoln("Hopping")
 			u.hop()
 			lastTick = now
 		case <-u.closeChan:
@@ -94,8 +87,6 @@ func (u *udpHopPacketConn) ReadFrom(b []byte) (n int, addr net.Addr, err error) 
 }
 
 func (u *udpHopPacketConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
-	// u.connMutex.RLock()
-	// defer u.connMutex.RUnlock()
 	if u.closed {
 		log.Infoln("write to closed conn")
 		return 0, net.ErrClosed
