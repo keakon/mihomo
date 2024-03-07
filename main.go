@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"runtime"
@@ -48,6 +49,18 @@ func init() {
 }
 
 func main() {
+	if runtime.GOOS == "android" {
+		out, err := exec.Command("getprop", "persist.sys.timezone").Output()
+		if err != nil {
+			return
+		}
+		z, err := time.LoadLocation(strings.TrimSpace(string(out)))
+		if err != nil {
+			return
+		}
+		time.Local = z
+	}
+
 	_, _ = maxprocs.Set(maxprocs.Logger(func(string, ...any) {}))
 	if version {
 		fmt.Printf("Mihomo Meta %s %s %s with %s %s\n",
