@@ -191,8 +191,8 @@ func NewHysteria2(option Hysteria2Option) (*Hysteria2, error) {
 			for _, port := range ports {
 				clientOptions.ServerAddresses = append(clientOptions.ServerAddresses, M.ParseSocksaddrHostPort(option.Server, port))
 			}
-			clientOptions.ServerAddressIndex = rand.Intn(len(clientOptions.ServerAddresses))
-			clientOptions.ServerAddress = clientOptions.ServerAddresses[clientOptions.ServerAddressIndex]
+			index := rand.Intn(len(clientOptions.ServerAddresses))
+			clientOptions.ServerAddress = clientOptions.ServerAddresses[index]
 
 			if option.HopInterval == 0 {
 				option.HopInterval = defaultHopInterval
